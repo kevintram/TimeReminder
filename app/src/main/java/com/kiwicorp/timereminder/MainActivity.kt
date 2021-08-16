@@ -1,18 +1,17 @@
 package com.kiwicorp.timereminder
 
 import android.app.AlarmManager
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.AlarmManagerCompat
 import androidx.core.content.getSystemService
 import com.google.android.material.switchmaterial.SwitchMaterial
 import java.time.Instant
-import java.time.ZonedDateTime
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,7 +22,13 @@ class MainActivity : AppCompatActivity() {
         val switch: SwitchMaterial = findViewById(R.id._switch)
 
         switch.setOnCheckedChangeListener { buttonView, isChecked ->
-            if (isChecked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startNotis()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (isChecked)  {
+                    startNotis()
+                } else {
+                    stopNotis()
+                }
+            }
         }
     }
 
@@ -36,7 +41,7 @@ class MainActivity : AppCompatActivity() {
         val notificationIntent = PendingIntent.getBroadcast(
             this,
             0,
-            Intent(this,NotificationBroadcastReceiver::class.java),
+            Intent(this, NotificationBroadcastReceiver::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
@@ -48,5 +53,26 @@ class MainActivity : AppCompatActivity() {
                 notificationIntent
             )
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun stopNotis() {
+        val notificationManager: NotificationManager = getSystemService()
+            ?: throw Exception("Notification Manager not found.")
+
+        val alarmManager: AlarmManager? = getSystemService()
+
+        val notificationIntent = PendingIntent.getBroadcast(
+            this,
+            0,
+            Intent(this, NotificationBroadcastReceiver::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        notificationIntent?.let {
+            alarmManager?.cancel(notificationIntent)
+        }
+
+        notificationManager.cancel(0)
     }
 }
